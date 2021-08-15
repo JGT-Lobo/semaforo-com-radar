@@ -1,0 +1,119 @@
+//Definição dos pinos do semáforo
+int verde = 10;
+int amarelo = 9;
+int vermelho = 8;
+//Definição dos pinos do radar
+const int US1 = 3;
+const int US2 = 2;
+float DIST = 10;	//distância em metros dos sensores
+//Definição das variáveis do semáforo
+unsigned long tempY;
+unsigned long tempR;
+unsigned long tempG;
+bool variarY = false;
+bool variarR = false;
+bool variarG = false;
+//Definição das variáveis do radar 
+unsigned char flagHIGH=0;
+float temp1;
+float temp2;
+float tempHL;
+float vel=0;
+
+void setup () {
+  Serial.begin(9600);
+  pinMode(vermelho, OUTPUT);
+  pinMode(amarelo, OUTPUT);
+  pinMode(verde, OUTPUT);
+}
+
+void loop () { 
+  tempY=(millis()*0.001);
+  tempR=(millis()*0.001);
+  tempG=(millis()*0.001);
+  semaforoY();
+  semaforoR();
+  semaforoG();
+  radar();
+}
+
+void semaforoY(){
+  if (tempY%5==0 && variarY==false && tempY!=0 && tempY%10!=0){
+    digitalWrite(amarelo, !digitalRead(amarelo));
+    tempY=(millis()*0.001);
+    variarY=true;
+  }
+  if (((tempY-6)%10)==0 && variarY==true && tempY!=0){
+    digitalWrite(amarelo, !digitalRead(amarelo));
+    tempY=(millis()*0.001);
+    variarY=false;
+  }
+}
+
+void semaforoR(){
+  if (tempR%10==0 && variarR==false){
+    digitalWrite(vermelho, !digitalRead(vermelho));
+    tempR=(millis()*0.001);
+    variarR=true;
+  }
+  if (tempR%5==0 && variarR==true && tempR!=0 && tempR%10!=0){
+    digitalWrite(vermelho, !digitalRead(vermelho));
+    tempR=(millis()*0.001);
+    variarR=false;
+  }
+}
+
+void semaforoG(){
+  if (((tempG-6)%10)==0 && variarG==false && tempG!=0){
+    digitalWrite(verde, !digitalRead(verde));
+    tempG=(millis()*0.001);
+    variarG=true;
+  }
+  if (tempG%10==0 && variarG==true){
+    digitalWrite(verde, !digitalRead(verde));
+    tempG=(millis()*0.001);
+    variarG=false;
+  }
+}
+
+void radar(){
+  long duration, x1;
+  pinMode(US1, OUTPUT);
+  digitalWrite(US1, LOW);
+  delay(2);
+  digitalWrite(US1, HIGH);
+  delay(5);
+  digitalWrite(US1, LOW);
+  pinMode(US1, INPUT);
+  duration = pulseIn(US1, HIGH);
+  x1 = microsecondsToCentimeters(duration);
+
+  long x2;
+  pinMode(US2, OUTPUT);
+  digitalWrite(US2, LOW);
+  delay(2);
+  digitalWrite(US2, HIGH);
+  delay(5);
+  digitalWrite(US2, LOW);
+  pinMode(US2, INPUT);
+  duration = pulseIn(US2, HIGH);
+  x2 = microsecondsToCentimeters(duration);
+  if (x1 <= 325 && flagHIGH == 0){
+    temp1=millis();
+    flagHIGH=1;
+  }
+  
+  if (x2 <= 325 && flagHIGH == 1){
+    temp2=millis();
+    tempHL = ((temp2-temp1)*0.001);
+    vel = ((DIST/tempHL)*3.6);
+    flagHIGH=0;
+    Serial.print(vel,0);
+    Serial.print("km/h ");
+  }
+    delay(10);
+}
+
+long microsecondsToCentimeters(long microseconds) {
+return microseconds / 29 / 2;
+}
